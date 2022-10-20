@@ -2,9 +2,12 @@ import os
 import argparse
 import numpy as np
 
-from PIL import Image
 import PIL
+from PIL import Image
 
+# JCW hacking...
+# Main inspiration:
+# https://stackoverflow.com/a/17383621
 
 def main(args):
     # Access all PNG files in directory
@@ -15,9 +18,9 @@ def main(args):
     dummy = np.array(Image.open(os.path.join(args.dir, all_images[0])).convert("RGB"))
 
     # Create a NumPy array of floats to store the average (assume RGB images)
-    avg_img = np.zeros(dummy.shape, dtype=np.int32)
-    min_img = dummy.copy()
-    max_img = dummy.copy()
+    avg_img = np.zeros(dummy.shape, dtype=np.int64)
+    min_img = np.zeros(dummy.shape, dtype=np.uint8) + 255
+    max_img = np.zeros(dummy.shape, dtype=np.uint8)
 
     # Build up average pixel intensities, casting each image as an array of floats
     for i, img in enumerate(all_images):
@@ -26,6 +29,8 @@ def main(args):
             Image.open(os.path.join(args.dir, img)).convert("RGB"), dtype=np.uint8
         )
         avg_img += current_img
+        # Image.fromarray(max_img, mode="RGB").show()
+        # breakpoint()
         min_img = np.where(current_img <= min_img, current_img, min_img)
         max_img = np.where(current_img >= max_img, current_img, max_img)
     print()
