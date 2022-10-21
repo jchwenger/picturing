@@ -24,7 +24,7 @@ def main(args):
 
     # Build up average pixel intensities, casting each image as an array of floats
     for i, img in enumerate(all_images):
-        print(f"{i}\r", end="")
+        print(f"{i}/{N}\r", end="")
         current_img = np.array(
             Image.open(os.path.join(args.dir, img)).convert("RGB"), dtype=np.uint8
         )
@@ -45,11 +45,11 @@ def main(args):
 
     # Generate, save and preview final image
     out_avg = Image.fromarray(avg_img, mode="RGB")
-    out_avg.save(os.path.join(results_dir, "average.jpg"))
+    out_avg.save(os.path.join(results_dir, "average.tiff"))
     out_min = Image.fromarray(min_img, mode="RGB")
-    out_min.save(os.path.join(results_dir, "min.jpg"))
+    out_min.save(os.path.join(results_dir, "min.tiff"))
     out_max = Image.fromarray(max_img, mode="RGB")
-    out_max.save(os.path.join(results_dir, "max.jpg"))
+    out_max.save(os.path.join(results_dir, "max.tiff"))
 
 
 if __name__ == "__main__":
