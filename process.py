@@ -11,6 +11,10 @@ from PIL import Image
 
 
 def main(args):
+
+    if args.dir.endswith("/"):
+        args.dir = args.dir[:-1]
+
     # Access all PNG files in directory
     all_images = [x for x in os.listdir(args.dir) if not x.startswith(".")]
     N = len(all_images) - args.chunksize
