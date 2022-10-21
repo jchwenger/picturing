@@ -5,7 +5,7 @@ import numpy as np
 import PIL
 from PIL import Image
 
-# JCW hacking...
+# Jérémie C. Wenger hacking...
 # Main inspiration:
 # https://stackoverflow.com/a/17383621
 
