@@ -15,6 +15,11 @@ def main(args):
     if args.dir.endswith("/"):
         args.dir = args.dir[:-1]
 
+    if args.schedule:
+        args.schedule = [
+            [int(i) for i in s.split(",")] for s in args.schedule.split(";") if s
+        ]
+
     # Access all PNG files in directory
     all_images = [x for x in os.listdir(args.dir) if not x.startswith(".")]
     N = len(all_images)
@@ -44,16 +49,70 @@ def main(args):
         os.mkdir(results_dir)
 
     i = 0
+
     print(f"chunksize: {args.chunksize} | increment: {args.increment}")
+    base_increment = args.increment
+    base_chunksize = args.chunksize
+
+    if args.schedule:
+        schedule_i = 0
+        current_schedule = args.schedule[schedule_i]
+        print("schedule")
+        for sch in args.schedule:
+            print(
+                f"- from frame {sch[0]}, until reaching {sch[1]}, increment: {sch[2]} "
+            )
+        # direction of increments, up or down
+        up = True if args.chunksize < current_schedule[1] else False
+        # condition: if we go beyond the targeted chunkside, above or below
+        def cond():
+            return args.chunksize >= current_schedule[1] if up else args.chunksize <= current_schedule[1]
+
     while i < N - args.chunksize:
-        if args.increment > 0:
-            print(f"{i}/{N} | chunksize: {args.chunksize}")
+
+        if args.schedule:
+
+            if i == current_schedule[0]:
+                print(
+                    f"Entering schedule {schedule_i+1} | until reaching {current_schedule[1]}, increment: {current_schedule[2]}"
+                )
+                up = True if args.chunksize < current_schedule[1] else False
+                args.increment = current_schedule[2]
+                schedule_complete = False
+
+            if cond() and not schedule_complete:
+                args.chunksize = current_schedule[1]
+                schedule_complete = True
+                args.increment = 0
+                print(
+                    f"Schedule {schedule_i+1} complete | chunksize now: {args.chunksize}, increment: {args.increment}"
+                )
+                schedule_i += 1
+                if schedule_i == len(args.schedule):
+                    if args.back_to_default:
+                        args.chunksize = base_chunksize
+                        args.increment = base_increment
+                        print(
+                            f"All schedules completed | back to chunksize: {args.chunksize}, increment: {args.increment}"
+                        )
+                    else:
+                        print(f"All schedules completed")
+                else:
+                    current_schedule = args.schedule[schedule_i]
+
+            print(f"{i}/{N} | chunksize: {args.chunksize}, increment: {args.increment}")
+
         else:
-            print(f"{i}/{N}")
+
+            if args.increment > 0 or args.schedule:
+                print(f"{i}/{N} | chunksize: {args.chunksize}")
+            else:
+                print(f"{i}/{N}")
+
         avg_img, min_img, max_img = initialize_arrays()
         subset = all_images[i : i + args.chunksize]
         for j, img_filename in enumerate(subset):
-            print(f"{j}/{len(subset)}\r", end="")
+            print(f"{j+1}/{len(subset)}\r", end="")
             current_img = np.array(
                 Image.open(os.path.join(args.dir, img_filename)).convert("RGB"),
                 dtype=np.uint8,
@@ -75,7 +134,10 @@ def main(args):
         )
         print()
         i += 1
-        args.chunksize += args.increment
+        if up:
+            args.chunksize += args.increment
+        else:
+            args.chunksize -= args.increment
 
 
 if __name__ == "__main__":
@@ -101,10 +163,46 @@ if __name__ == "__main__":
         "--increment",
         "-n",
         type=int,
-        default=00,
+        default=0,
         help="""
         The increment by which the chunksize is increased at each step.
         Default: 0.
+        """,
+    )
+
+    parser.add_argument(
+        "--schedule",
+        "-e",
+        type=str,
+        help="""
+        Schedules for more fine-grained changes to chunksizes.
+        Format:
+            'start_frame,chunksize_goal,increment'
+
+        These can be chained together with a semicolon:
+
+            's_f,c_g,n;s_f_2,c_g_2,n_2;s_f_3,c_g_3,n_3;...'
+
+        Example:
+            python process.py -e '145,90,1;294,45,1'
+            "From frame 145 onward, start incrementing the chunksize until
+            reaching 90. From frame 294, start decrementing until reaching 45.
+
+        Incrementing or decrementing will be deduced given the current
+        chunksize at the time the schedule starts.
+
+        The --chunksize and --increment options will still apply
+        before the beginning of the first schedule, and, if --back_to_default
+        is enabled, after the end of the last one.
+        """,
+    )
+
+    parser.add_argument(
+        "--back_to_default",
+        action="store_true",
+        help="""
+        When using a schedule, go back to the base --chunksize and --increment
+        after all schedules are complete. Defaults to false.
         """,
     )
 
