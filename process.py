@@ -134,10 +134,13 @@ def main(args):
         )
         print()
         i += 1
-        if up:
-            args.chunksize += args.increment
+        if args.schedule:
+            if up:
+                args.chunksize += args.increment
+            else:
+                args.chunksize -= args.increment
         else:
-            args.chunksize -= args.increment
+            args.chunksize += args.increment
 
 
 if __name__ == "__main__":
