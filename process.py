@@ -63,7 +63,7 @@ def main(args):
         print("schedule")
         for sch in args.schedule:
             print(
-                f"- from frame {sch[0]}, until reaching {sch[1]}, increment: {sch[2]} "
+                f"- from frame {sch[0]}, until reaching {sch[1]}, increment: {sch[2]}, step size: {sch[3]}"
             )
         print("-" * 40)
         # direction of increments, up or down
